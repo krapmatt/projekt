@@ -1,314 +1,82 @@
 package com.example.demo;
 
 import java.util.*;
+class Minesweeper {
+    private Board board;
+    private enum Action {
+        OPEN,
+        MARK;
 
-public class MineSweeper {
-    private int[][] visibleField = new int[10][10];
-    private int[][] hiddenField = new int[10][10];
-    public static void main(String[] args) {
-        MineSweeper M = new MineSweeper();
-        M.startGame();
-    }
-
-
-    public void startGame() {
-        System.out.println("---------Vítej v Hledání min, užij si hru---------");
-
-        setupPole(1);
-
-        boolean flag = true;
-        while (flag) {
-            displayVisible();
-            flag = playMove();
-            if(checkWin())
-            {
-                displayHidden();
-                System.out.println("\n---------Vyhrál jsi!---------");
-                break;
+        public static Action fromInteger(int i) {
+            switch(i) {
+                case 0: return OPEN;
+                case 1: return MARK;
             }
+            return null;
         }
+    };
+    private enum GameState {ONGOING, WON_GAME, LOST_GAME};
 
+    public Minesweeper(int rows, int columns, int numOfMines) {
+        board = new Board(rows, columns, numOfMines);
+        board.initBoard();
     }
 
-    public void setupPole(int diff) {
-        int var = 0;
-        while (var != 10) {
-            Random random = new Random();
-            int i = random.nextInt(10);
-            int j = random.nextInt(10);
-            hiddenField[i][j] = 100;
-            var++;
+    public GameState playRound(Scanner sc) {
+        board.display();
+
+        System.out.print("Akce (0 pro otevření políčka, 1 na označení miny) : ");
+        Action action = Action.fromInteger(sc.nextInt());
+        System.out.print("Řádek Sloupec : ");
+        int row    = sc.nextInt() - 1;
+        int column = sc.nextInt() - 1;
+
+        GameState gameState = GameState.ONGOING;
+
+        if(action == Action.OPEN) {
+            gameState = board.openSquare(row, column) ? GameState.ONGOING : GameState.LOST_GAME;
         }
-        buildHidden();
-    }
-
-    public void buildHidden() {
-        for (int i=0; i<10; i++) {
-            for (int j=0; j<10; j++) {
-                int pocet=0;
-                if (hiddenField[i][j] != 100) {
-
-                    if (i != 0) {
-                        if (hiddenField[i-1][j] == 100) pocet++;
-                        if (j!=0) {
-                            if(hiddenField[i-1][j-1] == 100) pocet++;
-                        }
-
-                    }
-                    if (i!=9) {
-                        if (hiddenField[i+1][j] == 100) pocet++;
-                        if (j!=9) {
-                            if (hiddenField[i+1][j+1] == 100) pocet++;
-                        }
-                    }
-                    if (j != 0) {
-                        if (hiddenField[i][j-1] == 100) pocet++;
-                        if (i != 9) {
-                            if (hiddenField[i+1][j-1] == 100) pocet++;
-                        }
-                    }
-                    if (j != 9) {
-                        if (hiddenField[i][j+1] == 100) pocet++;
-                        if (i != 0) {
-                            if (hiddenField[i-1][j+1] == 100) pocet++;
-                        }
-                    }
-
-                    hiddenField[i][j] = pocet;
-                }
-            }
-        }
-
-    }
-
-    public void displayVisible() {
-        System.out.print("\t ");
-        for (int i = 0; i<10; i++) {
-            System.out.print(" " + i + "  ");
-        }
-
-        System.out.print("\n");
-
-        for (int i = 0; i<10; i++) {
-            System.out.print(i + "\t| ");
-            
-            for (int j = 0; j<10; j++) {
-                if (visibleField[i][j] == 0) {
-                    System.out.print("?");
-                } else if (visibleField[i][j] == 50) {
-                    System.out.print(" ");
-                } else {
-                    System.out.print(visibleField[i][j]);
-                }
-                System.out.print(" | ");
-            }
-            System.out.print("\n");
-        }
-    }
-    
-    public void displayHidden() {
-        System.out.print("\t ");
-        for (int i=0; i<10; i++) {
-            System.out.print(" " + i + "  ");
-        }
-        System.out.print("\n");
-        for (int i=0; i<10; i++) {
-            System.out.print(i + "\t| ");
-            for (int j=0; j<10; j++) {
-                if(hiddenField[i][j] == 0) {
-                    System.out.print(" ");
-                } else if(hiddenField[i][j] == 100) {
-                    System.out.print("X");
-                } else {
-                    System.out.print(hiddenField[i][j]);
-                }
-                System.out.print(" | ");
-            }
-            System.out.print("\n");
-        }
-    }
-
-    public boolean playMove() {
-        Scanner sc= new Scanner(System.in);
-        System.out.print("\nČíslo řádku: ");
-        int i= sc.nextInt();
-        System.out.print("Číslo sloupce: ");
-        int j= sc.nextInt();
-
-        if (i<0 || i>9 || j<0 || j>9 || visibleField[i][j]!=0) {
-            System.out.print("\nŠpatný vstup!!");
-            return true;
-        }
-
-        if(hiddenField[i][j] == 100)
-        {
-            displayHidden();
-            System.out.print("A jejda umřel jsi \n-------GAME OVER-------");
-            return false;
-        }
-        else if (hiddenField[i][j]==0) {
-            fixVisible(i, j);
+        else if (action == Action.MARK) {
+            board.toggleMarkedSquare(row, column);
         }
         else {
-            fixNeighbours(i, j);
+            System.out.println("Invalid action");
         }
 
-        return true;
+        if (gameState == GameState.ONGOING) {
+            gameState = board.isAllOpenedOrMarked() ? GameState.WON_GAME : GameState.ONGOING;
+        }
+        return gameState;
     }
 
-    public void fixVisible(int i, int j) {
-        visibleField[i][j] = 50;
-        
-        if (i != 0) {
-            visibleField[i-1][j] = hiddenField[i-1][j];
-            if (visibleField[i-1][j] == 0) visibleField[i-1][j] = 50;
-            if (j!=0) {
-                visibleField[i-1][j-1] = hiddenField[i-1][j-1];
-                if (visibleField[i-1][j-1] == 0) visibleField[i-1][j-1] = 50;
-            }
-        }
-        
-        if (i != 9) {
-            visibleField[i+1][j] = hiddenField[i+1][j];
-            if (visibleField[i+1][j] == 0) visibleField[i+1][j]=50;
-            if (j != 9) {
-                visibleField[i+1][j+1] = hiddenField[i+1][j+1];
-                if (visibleField[i+1][j+1] == 0) visibleField[i+1][j+1] = 50;
-            }
-        }
-        
-        if(j != 0) {
-            visibleField[i][j-1] = hiddenField[i][j-1];
-            if (visibleField[i][j-1] == 0) visibleField[i][j-1] = 50;
-            if (i!=9) {
-                visibleField[i+1][j-1] = hiddenField[i+1][j-1];
-                if (visibleField[i+1][j-1] == 0) visibleField[i+1][j-1] = 50;
-            }
-        }
-        
-        if(j != 9) {
-            visibleField[i][j+1] = hiddenField[i][j+1];
-            if (visibleField[i][j+1] == 0) visibleField[i][j+1] = 50;
-            if (i!=0) {
-                visibleField[i-1][j+1] = hiddenField[i-1][j+1];
-                if (visibleField[i-1][j+1] == 0) visibleField[i-1][j+1] = 50;
-            }
-        }
+    public void gameOver(String msg) {
+        System.out.println("Prohra, umřel jsi!! " + msg);
     }
 
-    public void fixNeighbours(int i, int j)
-    {
-        Random random = new Random();
-        int x = random.nextInt()%4;
-
-        visibleField[i][j] = hiddenField[i][j];
-
-        if (x == 0) {
-
-            if (i != 0) {
-                if (hiddenField[i-1][j] != 100) {
-                    visibleField[i-1][j] = hiddenField[i-1][j];
-                    if (visibleField[i-1][j] == 0)  visibleField[i-1][j] = 50;
-                }
-            }
-
-            if (j != 0) {
-                if (hiddenField[i][j-1] != 100) {
-                    visibleField[i][j-1] = hiddenField[i][j-1];
-                    if (visibleField[i][j-1] == 0)  visibleField[i][j-1] = 50;
-                }
-
-            }
-
-            if (i != 0 && j != 0) {
-                if (hiddenField[i-1][j-1] != 100) {
-                    visibleField[i-1][j-1] = hiddenField[i-1][j-1];
-                    if (visibleField[i-1][j-1] == 0)  visibleField[i-1][j-1] = 50;
-                }
-
-            }
-        } else if (x == 1) {
-            if (i != 0) {
-                if (hiddenField[i-1][j] != 100) {
-                    visibleField[i-1][j] = hiddenField[i-1][j];
-                    if (visibleField[i-1][j] == 0)  visibleField[i-1][j] = 50;
-                }
-            }
-
-            if (j != 9) {
-                if(hiddenField[i][j+1] != 100) {
-                    visibleField[i][j+1] = hiddenField[i][j+1];
-                    if (visibleField[i][j+1] == 0)  visibleField[i][j+1] = 50;
-                }
-
-            }
-
-            if (i!=0 && j!=9) {
-                if(hiddenField[i-1][j+1] != 100)
-                {
-                    visibleField[i-1][j+1] = hiddenField[i-1][j+1];
-                    if (visibleField[i-1][j+1] == 0)  visibleField[i-1][j+1] = 50;
-                }
-            }
-
-        } else if(x == 2) {
-            if (i != 9) {
-                if(hiddenField[i+1][j] != 100) {
-                    visibleField[i+1][j] = hiddenField[i+1][j];
-                    if (visibleField[i+1][j] == 0)  visibleField[i+1][j] = 50;
-                }
-            }
-            if (j != 9) {
-                if (hiddenField[i][j+1] != 100) {
-                    visibleField[i][j+1] = hiddenField[i][j+1];
-                    if (visibleField[i][j+1] == 0)  visibleField[i][j+1] = 50;
-                }
-            }
-
-            if (i != 9 && j != 9) {
-                if (hiddenField[i+1][j+1]!=100) {
-                    visibleField[i+1][j+1] = hiddenField[i+1][j+1];
-                    if(visibleField[i+1][j+1] == 0)  visibleField[i+1][j+1] = 50;
-                }
-            }
-        } else {
-            if (i != 9) {
-                if (hiddenField[i+1][j] != 100) {
-                    visibleField[i+1][j] = hiddenField[i+1][j];
-                    if (visibleField[i+1][j] == 0)  visibleField[i+1][j] = 50;
-                }
-            }
-            if(j != 0) {
-                if (hiddenField[i][j-1] != 100) {
-                    visibleField[i][j-1] = hiddenField[i][j-1];
-                    if (visibleField[i][j-1] == 0)  visibleField[i][j-1] = 50;
-                }
-
-            }
-            if(i!=9 && j!=0) {
-                if(hiddenField[i+1][j-1] != 100) {
-                    visibleField[i+1][j-1] = hiddenField[i+1][j-1];
-                    if(visibleField[i+1][j-1] == 0)  visibleField[i+1][j-1] = 50;
-                }
-            }
+    public static void main(String[] args) {
+        if (args.length != 3) {
+            System.err.println("java Minesweeper <radky> <sloupce> <pocetMin>");
+            return;
         }
-    }
-    
-    public boolean checkWin() {
-        for (int i=0; i<10; i++) {
-            for (int j=0; j<10; j++) {
-                if (visibleField[i][j] == 0) {
-                    if(hiddenField[i][j] != 100) {
-                        return false;
-                    }
-                }
-            }
+        
+        Scanner sc = new Scanner(System.in);
+        Minesweeper minesweeper = new Minesweeper(
+            Integer.valueOf(args[0]),
+            Integer.valueOf(args[1]),
+            Integer.valueOf(args[2])
+        );
+
+        GameState curGameState = GameState.ONGOING;
+        while (curGameState == GameState.ONGOING) {
+            curGameState = minesweeper.playRound(sc);
         }
-        return true;
+
+        if (curGameState == GameState.LOST_GAME) {
+            minesweeper.gameOver("Prohra :(");
+        }
+        else if (curGameState == GameState.WON_GAME) {
+            minesweeper.gameOver("Výhra :)");
+        }
+        sc.close();
     }
-
-    
-
-    
 }
-
