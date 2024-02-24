@@ -2,7 +2,7 @@ package com.example.demo;
 
 import java.util.*;
 class Minesweeper {
-    private Board board;
+    public Board board;
     private enum Action {
         OPEN,
         MARK;
@@ -15,7 +15,7 @@ class Minesweeper {
             return null;
         }
     };
-    private enum GameState {ONGOING, WON_GAME, LOST_GAME};
+    public enum GameState {ONGOING, WON_GAME, LOST_GAME};
 
     public Minesweeper(int rows, int columns, int numOfMines) {
         board = new Board(rows, columns, numOfMines);
@@ -53,30 +53,4 @@ class Minesweeper {
         System.out.println("Prohra, umřel jsi!! " + msg);
     }
 
-    public static void main(String[] args) {
-        if (args.length != 3) {
-            System.err.println("java Minesweeper <radky> <sloupce> <pocetMin>");
-            return;
-        }
-        
-        Scanner sc = new Scanner(System.in);
-        Minesweeper minesweeper = new Minesweeper(
-            Integer.valueOf(args[0]),
-            Integer.valueOf(args[1]),
-            Integer.valueOf(args[2])
-        );
-
-        GameState curGameState = GameState.ONGOING;
-        while (curGameState == GameState.ONGOING) {
-            curGameState = minesweeper.playRound(sc);
-        }
-
-        if (curGameState == GameState.LOST_GAME) {
-            minesweeper.gameOver("Prohra :(");
-        }
-        else if (curGameState == GameState.WON_GAME) {
-            minesweeper.gameOver("Výhra :)");
-        }
-        sc.close();
-    }
 }
