@@ -4,12 +4,14 @@ package com.example.demo;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 
 import com.example.demo.Minesweeper.GameState;
 
 import java.util.Scanner;
 
 @SpringBootApplication
+@EntityScan(basePackages = {"com.example.demo", "com.example.demo.entity"})
 public class MinesweeperApplication implements CommandLineRunner {
 
     public static void main(String[] args) {
@@ -19,7 +21,7 @@ public class MinesweeperApplication implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (args.length != 3) {
-            System.err.println("Usage: java -jar Minesweeper.jar <rows> <columns> <numOfMines>");
+            System.err.println("Usage: java -jar Minesweeper-1.jar <rows> <columns> <numOfMines>");
             return;
         }
 
