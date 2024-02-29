@@ -1,4 +1,4 @@
-package com.example.demo;
+package cz.krapmatt.minesweeper;
 
 public class Square {
     private boolean hasMine;

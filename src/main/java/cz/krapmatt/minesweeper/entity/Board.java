@@ -1,7 +1,28 @@
-package com.example.demo;
+package cz.krapmatt.minesweeper.entity;
 import java.util.*;
 
+import cz.krapmatt.minesweeper.Square;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+
+
+@Entity
 public class Board {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "board_id")
+    private Integer id;
+
+    @OneToOne
+    @JoinColumn(name = "round_id")
+    private Round round;
+
+
     private final int rows;
     private final int columns;
     private final int numOfMines;
@@ -161,4 +182,63 @@ public class Board {
 
     private static final int[] di = { -1, -1, -1, 0, 0, 1, 1, 1 };
     private static final int[] dj = { -1, 0, 1, -1, 1, -1, 0, 1 };
+
+    
+
+    /**
+     * @return Long return the id
+     */
+    public Integer getId() {
+        return id;
+    }
+
+    /**
+     * @param id the id to set
+     */
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    /**
+     * @return Round return the round
+     */
+    public Round getRound() {
+        return round;
+    }
+
+    /**
+     * @param round the round to set
+     */
+    public void setRound(Round round) {
+        this.round = round;
+    }
+
+    /**
+     * @return int return the markedCount
+     */
+    public int getMarkedCount() {
+        return markedCount;
+    }
+
+    /**
+     * @param markedCount the markedCount to set
+     */
+    public void setMarkedCount(int markedCount) {
+        this.markedCount = markedCount;
+    }
+
+    /**
+     * @return ArrayList<Square> return the squares
+     */
+    public ArrayList<Square> getSquares() {
+        return squares;
+    }
+
+    /**
+     * @param squares the squares to set
+     */
+    public void setSquares(ArrayList<Square> squares) {
+        this.squares = squares;
+    }
+
 }
