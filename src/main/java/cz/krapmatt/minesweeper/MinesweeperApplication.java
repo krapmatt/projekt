@@ -25,18 +25,12 @@ import java.util.Scanner;
 public class MinesweeperApplication implements CommandLineRunner {
     @Autowired
     private GameService gameService;
-    @Autowired
-    private GameController gameController;
 
     @Autowired
     private RoundService roundService;
-    @Autowired
-    private RoundController roundController;
 
     @Autowired
     private BoardService boardService;
-    @Autowired
-    private BoardController boardController;
 
     public static void main(String[] args) {
         SpringApplication.run(MinesweeperApplication.class, args);
@@ -50,10 +44,10 @@ public class MinesweeperApplication implements CommandLineRunner {
         }
         
         Game game = new Game();
-        if(gameController == null) {
+        if(gameService == null) {
             throw new RuntimeException("GameController is not properly injected.");
         }
-        game = gameController.createGame(game);
+        game = gameService.createGame(game);
         List<Round> rounds = new ArrayList<>();
         
 
@@ -69,7 +63,7 @@ public class MinesweeperApplication implements CommandLineRunner {
         while (curGameState == GameState.ONGOING) {
             
             Round round = new Round();
-            round = roundController.createRound(round);
+            round = roundService.saveRound(round);
             
             curGameState = minesweeper.playRound(scanner);
             
