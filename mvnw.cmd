@@ -1,3 +1,4 @@
+
 @REM ----------------------------------------------------------------------------
 @REM Licensed to the Apache Software Foundation (ASF) under one
 @REM or more contributor license agreements.  See the NOTICE file
@@ -36,6 +37,8 @@
 @echo off
 @REM set title of command window
 title %0
+SETLOCAL
+SET "JAVA_HOME=C:\Program Files\Java\jdk-21"
 @REM enable echoing by setting MAVEN_BATCH_ECHO to 'on'
 @if "%MAVEN_BATCH_ECHO%" == "on"  echo %MAVEN_BATCH_ECHO%
 

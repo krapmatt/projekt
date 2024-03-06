@@ -2,47 +2,117 @@ package cz.krapmatt.minesweeper.entity;
 
 import jakarta.persistence.*;
 import java.util.List;
+
 @Entity
+@Table(name = "game")
 public class Game {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name="game_id")
     private Integer id;
 
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
-    private List<Round> rounds;
+    private List<Board> boards;
 
-    // Add other fields as needed
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
+    private List<Square> squares;
+
+    @Column(name="rows")
+    private int rows;
+
+    @Column(name="columns")
+    private int columns;
+
+    @Column(name="numOfMines")
+    private int numOfMines;
+
 
     // Getters and setters
     
-
     /**
-     * @return Long return the id
+     * @return Integer return the id
      */
     public Integer getId() {
         return id;
     }
 
     /**
-     * @param i the id to set
+     * @param id the id to set
      */
-    public void setId(Integer i) {
-        this.id = i;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     /**
-     * @return List<Round> return the rounds
+     * @return int return the rows
      */
-    public List<Round> getRounds() {
-        return rounds;
+    public int getRows() {
+        return rows;
     }
 
     /**
-     * @param rounds the rounds to set
+     * @param rows the rows to set
      */
-    public void setRounds(List<Round> rounds) {
-        this.rounds = rounds;
+    public void setRows(int rows) {
+        this.rows = rows;
+    }
+
+    /**
+     * @return int return the columns
+     */
+    public int getColumns() {
+        return columns;
+    }
+
+    /**
+     * @param columns the columns to set
+     */
+    public void setColumns(int columns) {
+        this.columns = columns;
+    }
+
+    /**
+     * @return int return the numOfMines
+     */
+    public int getNumOfMines() {
+        return numOfMines;
+    }
+
+    /**
+     * @param numOfMines the numOfMines to set
+     */
+    public void setNumOfMines(int numOfMines) {
+        this.numOfMines = numOfMines;
+    }
+
+
+    /**
+     * @return List<Board> return the boards
+     */
+    public List<Board> getBoards() {
+        return boards;
+    }
+
+    /**
+     * @param boards the boards to set
+     */
+    public void setBoards(List<Board> boards) {
+        this.boards = boards;
+    }
+
+
+    /**
+     * @return List<Square> return the squares
+     */
+    public List<Square> getSquares() {
+        return squares;
+    }
+
+    /**
+     * @param squares the squares to set
+     */
+    public void setSquares(List<Square> squares) {
+        this.squares = squares;
     }
 
 }
