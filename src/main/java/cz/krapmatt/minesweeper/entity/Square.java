@@ -23,9 +23,6 @@ public class Square {
     @JoinColumn(name="board_id")
     private Board board;
 
-    @ManyToOne
-    @JoinColumn(name = "game_id")
-    private Game game;
 
     private boolean hasMine;
     private boolean isOpened;
@@ -110,22 +107,6 @@ public class Square {
         this.board = board;
     }
 
-
-    /**
-     * @return Game return the game
-     */
-    public Game getGame() {
-        return game;
-    }
-
-    /**
-     * @param game the game to set
-     */
-    public void setGame(Game game) {
-        this.game = game;
-    }
-
-
     public boolean checkIsOpened() {
         return isOpened;
     }
@@ -162,4 +143,18 @@ public class Square {
     public static int getNeighbourCount() {
         return neighbourCount;
     }
+
+    @Override
+    public Square clone() {
+        Square square = new Square();
+        square.hasMine = this.hasMine;
+        square.isMarked = this.isMarked;
+        square.isOpened = this.isOpened;
+        square.mineCount = this.mineCount;
+
+        return square;
+    }
+
+    
+
 }

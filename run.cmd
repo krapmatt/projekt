@@ -1,0 +1,1 @@
+.\mvnw.cmd compile exec:java -D"exec.mainClass"="cz.krapmatt.minesweeper.MinesweeperApplication" -D"exec.args"="%*"

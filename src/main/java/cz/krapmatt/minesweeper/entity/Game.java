@@ -14,8 +14,6 @@ public class Game {
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
     private List<Board> boards;
 
-    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
-    private List<Square> squares;
 
     @Column(name="rows")
     private int rows;
@@ -101,18 +99,5 @@ public class Game {
     }
 
 
-    /**
-     * @return List<Square> return the squares
-     */
-    public List<Square> getSquares() {
-        return squares;
-    }
-
-    /**
-     * @param squares the squares to set
-     */
-    public void setSquares(List<Square> squares) {
-        this.squares = squares;
-    }
 
 }

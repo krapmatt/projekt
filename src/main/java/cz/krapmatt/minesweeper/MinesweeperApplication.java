@@ -53,28 +53,46 @@ public class MinesweeperApplication implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (args.length != 3) {
-            System.err.println("Usage: java -jar Minesweeper-1.jar <rows> <columns> <numOfMines>");
+        if (args.length != 4) {
+            System.err.println("Usage: java -jar Minesweeper-1.jar <rows> <columns> <numOfMines> <new/gameid>");
             return;
         }
         //Zadat id hry nebo x na vytvoření nové
         //pro odejití hry a připojení zpět no ní/jiné
-
+        //mělo by fungovat
         int rows = Integer.parseInt(args[0]);
         int columns = Integer.parseInt(args[1]);
         int numOfMines = Integer.parseInt(args[2]);
-        
-        Game game = gameService.createGame(rows, columns, numOfMines);
-       
-        
+        String gameIdInput = args[3];
+        int gameId;
+        Game game;
+
+        if (gameIdInput.equalsIgnoreCase("new")) {
+            game = gameService.createGame(rows, columns, numOfMines);
+        } else {
+           gameId = Integer.parseInt(args[4]);
+           game = gameService.getGame(gameId);
+        }
+
         if(gameService == null) {
             throw new RuntimeException("GameService is not properly injected.");
         }
 
-        
+        Board curBoard = game.getBoards().get(game.getBoards().size() - 1);
+        game.getId();
         GameState curGameState = GameState.ONGOING;
         while (curGameState == GameState.ONGOING) {
-            curGameState = playRound(game);
+            //z game vzít nejnovější board
+            //Board board = new Board();
+            //board.setSquares(gameService.findNewestSquares(game));
+            Board board = curBoard.clone();
+            
+            curGameState = playRound(board, game);
+            board.setGameState(curGameState);
+            curBoard = board;
+            
+            gameService.saveBoard(board);
+            
         }
 
         if (curGameState == GameState.LOST_GAME) {
@@ -82,9 +100,9 @@ public class MinesweeperApplication implements CommandLineRunner {
         } else if (curGameState == GameState.WON_GAME) {
             this.gameOver("Výhra");
         }
-
+        
         scanner.close();
-        gameRepository.saveGame(game);
+        
     }
 
     public void gameOver(String msg) {
@@ -92,8 +110,8 @@ public class MinesweeperApplication implements CommandLineRunner {
     }
 
     @Transactional
-    public GameState playRound(Game game) {
-        display(game);
+    public GameState playRound(Board board, Game game) {
+        display(board, game);
         
         System.out.print("Akce (0 pro otevření políčka, 1 na označení miny): ");
         Action action = Action.fromInteger(scanner.nextInt());
@@ -109,14 +127,14 @@ public class MinesweeperApplication implements CommandLineRunner {
 
         GameState gameState = GameState.ONGOING;
         if (gameState == GameState.ONGOING) {
-            gameState = gameService.isAllOpenedOrMarked(game) ? GameState.ONGOING : GameState.WON_GAME;
+            gameState = gameService.isAllOpenedOrMarked(board, game) ? GameState.ONGOING : GameState.WON_GAME;
         }
 
         if(action == Action.OPEN) {
-            gameState = gameService.openSquare(game, row, column) ? GameState.ONGOING : GameState.LOST_GAME;
+            gameState = gameService.openSquare(board, game, row, column) ? GameState.ONGOING : GameState.LOST_GAME;
         }
         else if (action == Action.MARK) {
-            gameService.toggleMarkedSquare(game, row, column);
+            gameService.toggleMarkedSquare(board, game, row, column);
         }
         else {
             System.out.println("Invalid action");
@@ -126,10 +144,10 @@ public class MinesweeperApplication implements CommandLineRunner {
         
     }
 
-    public void display(Game game) {
+    public void display(Board board, Game game) {
         int columns = game.getColumns();
         int rows = game.getRows();
-        List<Square> squares = game.getSquares();
+        List<Square> squares = board.getSquares();
         System.out.print("   ");
         for(int j = 0; j < columns; j++) {
             System.out.printf("%3d", j + 1);

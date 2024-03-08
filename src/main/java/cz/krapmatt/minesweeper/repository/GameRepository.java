@@ -1,43 +1,46 @@
 package cz.krapmatt.minesweeper.repository;
 
-
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
+import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-
+import cz.krapmatt.minesweeper.entity.Square;
+import cz.krapmatt.minesweeper.entity.Board;
 import cz.krapmatt.minesweeper.entity.Game;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 
 
 //Ručně SQL, přepsat to, jedna repository - ukládání všeho roundy, hry
 @Repository
 public class GameRepository {
     
-    private final SessionFactory sessionFactory;
+    private EntityManager entityManager;
 
     @Autowired
-    public GameRepository(SessionFactory sessionFactory) {
-        this.sessionFactory = sessionFactory;
+    public GameRepository(EntityManager entityManager) {
+        this.entityManager = entityManager;
     }
 
-    /*public Game saveGame(Game game) {
-        Session session = sessionFactory.getCurrentSession();
+    public Game saveGame(Game game) {
         if (game.getId() == null) {
-            session.persist(game);
+            entityManager.persist(game);
         } else {
-            game = session.merge(game);
+            game = entityManager.merge(game);
         }
         return game;    
-    }*/
-
-    public void saveGame(Game game) {
-        try (Session session = sessionFactory.openSession()) {
-            session.beginTransaction();
-            session.saveOrUpdate(game);
-            session.getTransaction().commit();
-        } catch (Exception e) {
-            e.printStackTrace(); // Handle exceptions appropriately
-        }
     }
 
+    public void saveBoard(Board board) {
+        if (board.getId() == null) {
+            entityManager.persist(board);
+        } else {
+            entityManager.merge(board);
+        }
+    }
+    
+    public Game findGameById(int id) {
+        return entityManager.getReference(Game.class, id);        
+    }
+    
+    
 }
