@@ -10,7 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-//držet u každého čtverce jedno kolo
+
 @Table(name = "squares")
 @Entity
 public class Square {

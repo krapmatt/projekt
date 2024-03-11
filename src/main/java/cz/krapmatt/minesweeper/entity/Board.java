@@ -30,7 +30,7 @@ public class Board {
     private Game game;
 
     //nějaký způsob uložení board
-    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "board", cascade = CascadeType.MERGE)
     private List<Square> squares;
 
     @Enumerated(EnumType.STRING)
@@ -139,8 +139,9 @@ public class Board {
         //Tohle to samé jako for jen stream
         //board.squares = this.squares.stream().map(x -> x.clone()).collect(Collectors.toList());
         for (int i = 0; i < this.squares.size(); i++) {
-            Square square = this.squares.get(i).clone();
-            board.squares.add(square);
+            Square clonesquare = this.squares.get(i).clone();
+            clonesquare.setBoard(board);
+            board.squares.add(clonesquare);
         }
 
         return board;

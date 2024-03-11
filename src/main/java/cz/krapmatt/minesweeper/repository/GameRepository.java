@@ -9,6 +9,7 @@ import cz.krapmatt.minesweeper.entity.Game;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 
+//Ukladání squares a board nemá ID 
 
 //Ručně SQL, přepsat to, jedna repository - ukládání všeho roundy, hry
 @Repository
@@ -25,7 +26,7 @@ public class GameRepository {
         if (game.getId() == null) {
             entityManager.persist(game);
         } else {
-            game = entityManager.merge(game);
+            return entityManager.merge(game);
         }
         return game;    
     }
@@ -34,6 +35,9 @@ public class GameRepository {
         if (board.getId() == null) {
             entityManager.persist(board);
         } else {
+            /*for(Square square : board.getSquares()) {
+                entityManager.merge(square);
+            }*/
             entityManager.merge(board);
         }
     }

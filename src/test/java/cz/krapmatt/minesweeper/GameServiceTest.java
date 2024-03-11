@@ -16,13 +16,15 @@ import cz.krapmatt.minesweeper.service.GameService;
 
 public class GameServiceTest {
 
-    private GameService gameService;
+    private final GameService gameService = new GameService();
 
     @BeforeEach
     public void setUp() {
         // Create GameService instance
-        gameService = new GameService(); 
-        GameRepository gameRepository = new GameRepository(null);
+        if(gameService == null) {
+            throw new RuntimeException("GameService is not properly injected.");
+        } 
+        
     }
 
     @Test

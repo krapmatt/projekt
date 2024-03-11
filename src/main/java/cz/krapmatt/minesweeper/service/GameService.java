@@ -20,11 +20,11 @@ import jakarta.transaction.Transactional;
 public class GameService {
     @Autowired
     private GameRepository gameRepository;
-    //JUnit testy TODO! - jeden test mám asi
-    //uložení !TODO - ukládám board asi ig
+    //JUnit testy  - jeden test mám asi
+    //uložení  - ukládám board asi ig
 
-    //game repo -> select game id -> nejnovější board a vycucnout čtverce
-    //Managed a detached entitách a transakce ->  @Transactional
+    //game repo -> select game id -> nejnovější board a vycucnout čtverce -> měl bych mít
+    //Managed a detached entitách a transakce ->  @Transactional -> pořád moc nechápu asi... :(((
     @Transactional
     public Game createGame(int rows, int columns, int numOfMines)  {
         Game game = new Game();

@@ -1,7 +1,6 @@
 
 package cz.krapmatt.minesweeper;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -10,30 +9,13 @@ import cz.krapmatt.minesweeper.entity.Board;
 import cz.krapmatt.minesweeper.entity.Game;
 import cz.krapmatt.minesweeper.entity.GameState;
 import cz.krapmatt.minesweeper.entity.Square;
-import cz.krapmatt.minesweeper.repository.GameRepository;
 import cz.krapmatt.minesweeper.service.GameService;
-import jakarta.transaction.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 @SpringBootApplication
 public class MinesweeperApplication implements CommandLineRunner {
-    @Autowired
-    private GameRepository gameRepository;
-    
-    private final GameService gameService;
-    private final Scanner scanner;
-
-    public MinesweeperApplication(GameService gameService) {
-        this.gameService = gameService;
-        this.scanner = new Scanner(System.in);
-    }
-    
-    private static final char filledSquareCharacter = '\u25A0';
-    private static final char markedFlagCharacter = '\u2691';
-
     private enum Action {
         OPEN,
         MARK;
@@ -45,10 +27,21 @@ public class MinesweeperApplication implements CommandLineRunner {
                 return null;
             }
         }
-    };
+    }
+    private static final char filledSquareCharacter = '\u25A0';
 
+    private static final char markedFlagCharacter = '\u2691';
+    
     public static void main(String[] args) {
         SpringApplication.run(MinesweeperApplication.class, args);
+    }
+    private final GameService gameService;
+
+    private final Scanner scanner;;
+
+    public MinesweeperApplication(GameService gameService) {
+        this.gameService = gameService;
+        this.scanner = new Scanner(System.in);
     }
 
     @Override
@@ -66,6 +59,10 @@ public class MinesweeperApplication implements CommandLineRunner {
         String gameIdInput = args[3];
         int gameId;
         Game game;
+        
+        if(gameService == null) {
+            throw new RuntimeException("GameService is not properly injected.");
+        }
 
         if (gameIdInput.equalsIgnoreCase("new")) {
             game = gameService.createGame(rows, columns, numOfMines);
@@ -74,25 +71,16 @@ public class MinesweeperApplication implements CommandLineRunner {
            game = gameService.getGame(gameId);
         }
 
-        if(gameService == null) {
-            throw new RuntimeException("GameService is not properly injected.");
-        }
-
-        Board curBoard = game.getBoards().get(game.getBoards().size() - 1);
-        game.getId();
         GameState curGameState = GameState.ONGOING;
         while (curGameState == GameState.ONGOING) {
-            //z game vzít nejnovější board
-            //Board board = new Board();
-            //board.setSquares(gameService.findNewestSquares(game));
-            Board board = curBoard.clone();
-            
+            Board board = new Board();
+            //nalezení nových čtverců
+            board.setSquares(gameService.findNewestSquares(game));
+            //hraní kola
             curGameState = playRound(board, game);
-            board.setGameState(curGameState);
-            curBoard = board;
-            
+            //Nastavení id hry pro každý board
+            board.setGame(game);
             gameService.saveBoard(board);
-            
         }
 
         if (curGameState == GameState.LOST_GAME) {
@@ -100,17 +88,15 @@ public class MinesweeperApplication implements CommandLineRunner {
         } else if (curGameState == GameState.WON_GAME) {
             this.gameOver("Výhra");
         }
-        
         scanner.close();
-        
     }
 
-    public void gameOver(String msg) {
+    private void gameOver(String msg) {
         System.out.println("Stav hry: " + msg);
     }
 
-    @Transactional
-    public GameState playRound(Board board, Game game) {
+    
+    private GameState playRound(Board board, Game game) {
         display(board, game);
         
         System.out.print("Akce (0 pro otevření políčka, 1 na označení miny): ");
@@ -139,12 +125,10 @@ public class MinesweeperApplication implements CommandLineRunner {
         else {
             System.out.println("Invalid action");
         }
-
         return gameState;
-        
     }
 
-    public void display(Board board, Game game) {
+    private void display(Board board, Game game) {
         int columns = game.getColumns();
         int rows = game.getRows();
         List<Square> squares = board.getSquares();
