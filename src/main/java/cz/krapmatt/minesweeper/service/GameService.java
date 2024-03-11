@@ -34,6 +34,7 @@ public class GameService {
         Board board = new Board();
         List<Square> squares = createSquares(rows, columns, board);
         board.setSquares(squares);
+        board.setGame(game);
 
         List<Board> boards = Arrays.asList(board);
         fillSquares(boards.get(0), game);

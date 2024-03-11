@@ -67,13 +67,14 @@ public class MinesweeperApplication implements CommandLineRunner {
         if (gameIdInput.equalsIgnoreCase("new")) {
             game = gameService.createGame(rows, columns, numOfMines);
         } else {
-           gameId = Integer.parseInt(args[4]);
+           gameId = Integer.parseInt(args[3]);
            game = gameService.getGame(gameId);
         }
 
         GameState curGameState = GameState.ONGOING;
+        Board board = new Board();
         while (curGameState == GameState.ONGOING) {
-            Board board = new Board();
+            
             //nalezení nových čtverců
             board.setSquares(gameService.findNewestSquares(game));
             //hraní kola
@@ -82,7 +83,7 @@ public class MinesweeperApplication implements CommandLineRunner {
             board.setGame(game);
             gameService.saveBoard(board);
         }
-
+        gameService.saveBoard(board);
         if (curGameState == GameState.LOST_GAME) {
             this.gameOver("Prohra");
         } else if (curGameState == GameState.WON_GAME) {
