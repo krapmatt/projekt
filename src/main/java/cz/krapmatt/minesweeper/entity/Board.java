@@ -30,7 +30,7 @@ public class Board {
     private Game game;
 
     //nějaký způsob uložení board
-    @OneToMany(mappedBy = "board", cascade = CascadeType.MERGE)
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL)
     private List<Square> squares;
 
     @Enumerated(EnumType.STRING)

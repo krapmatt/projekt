@@ -4,6 +4,7 @@ package cz.krapmatt.minesweeper;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import cz.krapmatt.minesweeper.entity.Board;
 import cz.krapmatt.minesweeper.entity.Game;
@@ -18,7 +19,8 @@ import java.util.Scanner;
 public class MinesweeperApplication implements CommandLineRunner {
     private enum Action {
         OPEN,
-        MARK;
+        MARK,
+        CLOSE;
 
         public static Action fromInteger(int i) {
             if (i < Action.values().length) {
@@ -30,7 +32,7 @@ public class MinesweeperApplication implements CommandLineRunner {
     }
     private static final char filledSquareCharacter = '\u25A0';
 
-    private static final char markedFlagCharacter = '\u2691';
+    private static final String markedFlagCharacter = "\u2690";
     
     public static void main(String[] args) {
         SpringApplication.run(MinesweeperApplication.class, args);
@@ -42,7 +44,9 @@ public class MinesweeperApplication implements CommandLineRunner {
     public MinesweeperApplication(GameService gameService) {
         this.gameService = gameService;
         this.scanner = new Scanner(System.in);
+
     }
+
 
     @Override
     public void run(String... args) {
@@ -72,18 +76,16 @@ public class MinesweeperApplication implements CommandLineRunner {
         }
 
         GameState curGameState = GameState.ONGOING;
-        Board board = new Board();
+        
         while (curGameState == GameState.ONGOING) {
-            
-            //nalezení nových čtverců
-            board.setSquares(gameService.findNewestSquares(game));
+            //Naklonování nejnovější board... musí se clonovat jinak nemá null id a přepisuje se jen
+            Board board = gameService.findNewestBoard(game).clone();
             //hraní kola
             curGameState = playRound(board, game);
             //Nastavení id hry pro každý board
-            board.setGame(game);
             gameService.saveBoard(board);
         }
-        gameService.saveBoard(board);
+        gameService.saveGame(game);
         if (curGameState == GameState.LOST_GAME) {
             this.gameOver("Prohra");
         } else if (curGameState == GameState.WON_GAME) {
@@ -95,13 +97,17 @@ public class MinesweeperApplication implements CommandLineRunner {
     private void gameOver(String msg) {
         System.out.println("Stav hry: " + msg);
     }
-
-    
+    //Hraní jednoho kola
     private GameState playRound(Board board, Game game) {
-        display(board, game);
+        display(board.getSquares(), game);
         
-        System.out.print("Akce (0 pro otevření políčka, 1 na označení miny): ");
+        System.out.print("Akce (0 pro otevření políčka, 1 na označení miny, 2 pro ukončení hry): ");
         Action action = Action.fromInteger(scanner.nextInt());
+        if (action == Action.CLOSE) {
+            gameService.saveGame(game);
+            System.out.println("Id hry: " + game.getId());
+            System.exit(1);
+        } 
         System.out.print("Řádek: ");
         int row = scanner.nextInt() - 1;
         System.out.print("Sloupec: ");
@@ -114,7 +120,7 @@ public class MinesweeperApplication implements CommandLineRunner {
 
         GameState gameState = GameState.ONGOING;
         if (gameState == GameState.ONGOING) {
-            gameState = gameService.isAllOpenedOrMarked(board, game) ? GameState.ONGOING : GameState.WON_GAME;
+            gameState = gameService.isAllOpenedOrMarked(board, game) ? GameState.WON_GAME : GameState.ONGOING;
         }
 
         if(action == Action.OPEN) {
@@ -122,17 +128,15 @@ public class MinesweeperApplication implements CommandLineRunner {
         }
         else if (action == Action.MARK) {
             gameService.toggleMarkedSquare(board, game, row, column);
-        }
-        else {
+        } else {
             System.out.println("Invalid action");
         }
         return gameState;
     }
 
-    private void display(Board board, Game game) {
+    private void display(List<Square> squares, Game game) {
         int columns = game.getColumns();
         int rows = game.getRows();
-        List<Square> squares = board.getSquares();
         System.out.print("   ");
         for(int j = 0; j < columns; j++) {
             System.out.printf("%3d", j + 1);
@@ -146,10 +150,10 @@ public class MinesweeperApplication implements CommandLineRunner {
                     System.out.printf("%3d", squares.get(i * columns + j).getMineCount());
                 }
                 else if (squares.get(i * columns + j).checkIsMarked()) {
-                    System.out.printf("%3c", markedFlagCharacter);
+                    System.out.printf("%3s", markedFlagCharacter);
                 }
                 else {
-                    System.out.printf("%3c", filledSquareCharacter);
+                    System.out.printf("%3s", filledSquareCharacter);
                 }
             }
             System.out.println();

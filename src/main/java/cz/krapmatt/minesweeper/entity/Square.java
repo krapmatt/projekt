@@ -40,7 +40,7 @@ public class Square {
     /**
      * @return int return the id
      */
-    public int getId() {
+    public Integer getId() {
         return id;
     }
 

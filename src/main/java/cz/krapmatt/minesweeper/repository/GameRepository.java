@@ -1,16 +1,13 @@
 package cz.krapmatt.minesweeper.repository;
 
-import java.util.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
-import cz.krapmatt.minesweeper.entity.Square;
+
 import cz.krapmatt.minesweeper.entity.Board;
 import cz.krapmatt.minesweeper.entity.Game;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
-
-//Ukladání squares a board nemá ID 
-
+import jakarta.transaction.Transactional;
 //Ručně SQL, přepsat to, jedna repository - ukládání všeho roundy, hry
 @Repository
 public class GameRepository {
@@ -35,16 +32,24 @@ public class GameRepository {
         if (board.getId() == null) {
             entityManager.persist(board);
         } else {
-            /*for(Square square : board.getSquares()) {
-                entityManager.merge(square);
-            }*/
             entityManager.merge(board);
         }
     }
-    
+
+    @Transactional
     public Game findGameById(int id) {
-        return entityManager.getReference(Game.class, id);        
+        Game game = entityManager.find(Game.class, id);
+        
+        
+        return game;
     }
     
-    
+    public Board findLatestBoardByGameId(int gameId) {
+        TypedQuery<Board> query = entityManager.createQuery("SELECT b FROM Board b WHERE b.game.id = :gameId ORDER BY b.id DESC", Board.class);
+        query.setParameter("gameId", gameId);
+        query.setMaxResults(1);
+        Board board = query.getSingleResult();
+        
+        return board;
+    }
 }

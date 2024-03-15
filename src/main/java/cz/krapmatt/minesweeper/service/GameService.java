@@ -8,9 +8,9 @@ import java.util.Random;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import cz.krapmatt.minesweeper.entity.Square;
 import cz.krapmatt.minesweeper.entity.Board;
 import cz.krapmatt.minesweeper.entity.Game;
+import cz.krapmatt.minesweeper.entity.Square;
 import cz.krapmatt.minesweeper.repository.GameRepository;
 import jakarta.transaction.Transactional;
 
@@ -31,20 +31,28 @@ public class GameService {
         game.setRows(rows);
         game.setColumns(columns);
         game.setNumOfMines(numOfMines);
+
         Board board = new Board();
-        List<Square> squares = createSquares(rows, columns, board);
-        board.setSquares(squares);
         board.setGame(game);
 
+        List<Square> squares = createSquares(rows, columns, board);
+        board.setSquares(squares);
+        
+        fillSquares(board, game);
+
         List<Board> boards = Arrays.asList(board);
-        fillSquares(boards.get(0), game);
         game.setBoards(boards);
 
         gameRepository.saveGame(game);
         
         return game;      
     }
-    
+
+    @Transactional
+    public void saveGame(Game game) {
+        gameRepository.saveGame(game);
+    }
+
     @Transactional
     public void saveBoard(Board board) {
         gameRepository.saveBoard(board);
@@ -54,27 +62,15 @@ public class GameService {
     public Game getGame(int id) {
         return gameRepository.findGameById(id);
     }
+    
     @Transactional
-    public List<Square> findNewestSquares(Game game) {
-        List<Board> boards = game.getBoards();
-        //Nejnovější má nejvyšší id v té hře.. pokud by to bylo globálně tak ano nefunguje to... nevím možná jsem mimo
-        Board newestBoard = null;
-        for (Board board : boards) {
-            if (newestBoard == null || board.getId() > newestBoard.getId()) {
-                newestBoard = board;
-            }
-        }
-
-        if (newestBoard != null) {
-            return newestBoard.getSquares();
-        } else {
-            return null;
-        }    
+    public Board findNewestBoard(Game game) {
+        return gameRepository.findLatestBoardByGameId(game.getId());
     }
 
 
     private int markedCount;
-    private List<Square> createSquares(int rows, int columns, Board board) {
+    public List<Square> createSquares(int rows, int columns, Board board) {
         List<Square> squares = new ArrayList<>();
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < columns; j++) {
@@ -86,7 +82,6 @@ public class GameService {
         return squares;
     }
 
-   
     private void fillSquares(Board board, Game game) {
         List<Square> squares = board.getSquares();
         squares = placeMines(board, game);
@@ -94,7 +89,7 @@ public class GameService {
         board.setSquares(squares);
     }
     
-    private List<Square> placeMines(Board board, Game game) {
+    public List<Square> placeMines(Board board, Game game) {
         int minesPlaced = 0;
         int randRange = game.getRows() * game.getColumns();
         Random rand = new Random();
@@ -203,7 +198,8 @@ public class GameService {
     public boolean isAllOpenedOrMarked(Board board, Game game) {
         List<Square> squares = board.getSquares();
         int columns = game.getColumns();
-        for(int i = 0; i < game.getRows(); i++) {
+        int rows = game.getRows();
+        for(int i = 0; i < rows; i++) {
             for(int j = 0; j < columns; j++) {
                 if (!squares.get(i * columns + j).checkIsOpened() || !squares.get(i * columns + j).checkIsMarked()) {
                     return false;
@@ -212,12 +208,9 @@ public class GameService {
         }
         return true;
     }
-    
-        
 
     private static final int[] di = { -1, -1, -1, 0, 0, 1, 1, 1 };
     private static final int[] dj = { -1, 0, 1, -1, 1, -1, 0, 1 };
 
-    // Add other methods for CRUD operations
 }
 
