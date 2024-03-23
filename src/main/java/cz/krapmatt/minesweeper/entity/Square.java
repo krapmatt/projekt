@@ -155,6 +155,9 @@ public class Square {
         return square;
     }
 
-    
-
+    @Override
+    public String toString() {
+        return "Square [id=" + id + ", hasMine=" + hasMine + ", isOpened=" + isOpened + ", isMarked=" + isMarked
+                + ", mineCount=" + mineCount + "]";
+    }
 }

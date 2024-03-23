@@ -85,11 +85,12 @@ public class Board {
         this.gameState = gameState;
     }
 
+   
+
     @Override
     public String toString() {
-        return "Board [id=" + id + ", game=" + game + ", squares=" + squares + ", gameState=" + gameState + "]";
+        return "Board [id=" + id + ", squares=" + squares + ", gameState=" + gameState + "]";
     }
-
     @Override
     public int hashCode() {
         final int prime = 31;

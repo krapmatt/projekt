@@ -1,19 +1,19 @@
 
 package cz.krapmatt.minesweeper;
 
+import java.util.List;
+import java.util.Scanner;
+
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ConfigurableApplicationContext;
 
+import cz.krapmatt.minesweeper.controller.GameController;
 import cz.krapmatt.minesweeper.entity.Board;
 import cz.krapmatt.minesweeper.entity.Game;
 import cz.krapmatt.minesweeper.entity.GameState;
 import cz.krapmatt.minesweeper.entity.Square;
 import cz.krapmatt.minesweeper.service.GameService;
-
-import java.util.List;
-import java.util.Scanner;
 
 @SpringBootApplication
 public class MinesweeperApplication implements CommandLineRunner {
@@ -38,7 +38,7 @@ public class MinesweeperApplication implements CommandLineRunner {
         SpringApplication.run(MinesweeperApplication.class, args);
     }
     private final GameService gameService;
-
+    
     private final Scanner scanner;;
 
     public MinesweeperApplication(GameService gameService) {
@@ -74,9 +74,8 @@ public class MinesweeperApplication implements CommandLineRunner {
            gameId = Integer.parseInt(args[3]);
            game = gameService.getGame(gameId);
         }
-
+        final GameController gameController;
         GameState curGameState = GameState.ONGOING;
-        
         while (curGameState == GameState.ONGOING) {
             //Naklonování nejnovější board... musí se clonovat jinak nemá null id a přepisuje se jen
             Board board = gameService.findNewestBoard(game).clone();

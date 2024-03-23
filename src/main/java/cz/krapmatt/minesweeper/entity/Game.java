@@ -98,6 +98,12 @@ public class Game {
         this.boards = boards;
     }
 
+    @Override
+    public String toString() {
+        return "Game [id=" + id + ", boards=" + boards + ", rows=" + rows + ", columns=" + columns + ", numOfMines="
+                + numOfMines + "]";
+    }
+
 
 
 }
