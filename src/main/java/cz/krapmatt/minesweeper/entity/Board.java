@@ -1,7 +1,6 @@
 package cz.krapmatt.minesweeper.entity;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -29,13 +28,15 @@ public class Board {
     @JoinColumn(name = "game_id")
     private Game game;
 
-    //nějaký způsob uložení board
     @OneToMany(mappedBy = "board", cascade = CascadeType.ALL)
     private List<Square> squares;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "game_state")
     private GameState gameState = GameState.ONGOING;
+
+
+
 
     public Game getGame() {
         return game;

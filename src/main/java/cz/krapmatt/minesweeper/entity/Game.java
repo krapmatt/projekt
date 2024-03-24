@@ -14,7 +14,6 @@ public class Game {
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
     private List<Board> boards;
 
-
     @Column(name="rows")
     private int rows;
 
@@ -103,7 +102,5 @@ public class Game {
         return "Game [id=" + id + ", boards=" + boards + ", rows=" + rows + ", columns=" + columns + ", numOfMines="
                 + numOfMines + "]";
     }
-
-
 
 }

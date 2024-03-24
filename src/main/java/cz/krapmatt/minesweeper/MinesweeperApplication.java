@@ -8,7 +8,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import cz.krapmatt.minesweeper.controller.GameController;
 import cz.krapmatt.minesweeper.entity.Board;
 import cz.krapmatt.minesweeper.entity.Game;
 import cz.krapmatt.minesweeper.entity.GameState;
@@ -37,6 +36,7 @@ public class MinesweeperApplication implements CommandLineRunner {
     public static void main(String[] args) {
         SpringApplication.run(MinesweeperApplication.class, args);
     }
+
     private final GameService gameService;
     
     private final Scanner scanner;;
@@ -46,7 +46,6 @@ public class MinesweeperApplication implements CommandLineRunner {
         this.scanner = new Scanner(System.in);
 
     }
-
 
     @Override
     public void run(String... args) {
@@ -70,21 +69,23 @@ public class MinesweeperApplication implements CommandLineRunner {
 
         if (gameIdInput.equalsIgnoreCase("new")) {
             game = gameService.createGame(rows, columns, numOfMines);
+            gameId = game.getId();
         } else {
            gameId = Integer.parseInt(args[3]);
            game = gameService.getGame(gameId);
         }
-        final GameController gameController;
         GameState curGameState = GameState.ONGOING;
         while (curGameState == GameState.ONGOING) {
             //Naklonování nejnovější board... musí se clonovat jinak nemá null id a přepisuje se jen
-            Board board = gameService.findNewestBoard(game).clone();
+            Board board = gameService.findNewestBoard(gameId).clone();
             //hraní kola
             curGameState = playRound(board, game);
             //Nastavení id hry pro každý board
             gameService.saveBoard(board);
         }
+
         gameService.saveGame(game);
+
         if (curGameState == GameState.LOST_GAME) {
             this.gameOver("Prohra");
         } else if (curGameState == GameState.WON_GAME) {
@@ -106,7 +107,8 @@ public class MinesweeperApplication implements CommandLineRunner {
             gameService.saveGame(game);
             System.out.println("Id hry: " + game.getId());
             System.exit(1);
-        } 
+        }
+
         System.out.print("Řádek: ");
         int row = scanner.nextInt() - 1;
         System.out.print("Sloupec: ");
@@ -117,9 +119,10 @@ public class MinesweeperApplication implements CommandLineRunner {
             return GameState.ONGOING;
         }
 
-        GameState gameState = GameState.ONGOING;
-        if (gameState == GameState.ONGOING) {
-            gameState = gameService.isAllOpenedOrMarked(board, game) ? GameState.WON_GAME : GameState.ONGOING;
+        GameState gameState;
+        gameState = gameService.isAllOpenedOrMarked(game) ? GameState.WON_GAME : GameState.ONGOING;
+        if (gameState == GameState.WON_GAME) {
+            return GameState.WON_GAME;
         }
 
         if(action == Action.OPEN) {
@@ -130,6 +133,7 @@ public class MinesweeperApplication implements CommandLineRunner {
         } else {
             System.out.println("Invalid action");
         }
+        
         return gameState;
     }
 

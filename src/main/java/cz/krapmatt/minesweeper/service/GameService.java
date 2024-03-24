@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import cz.krapmatt.minesweeper.entity.Board;
 import cz.krapmatt.minesweeper.entity.Game;
+import cz.krapmatt.minesweeper.entity.GameState;
 import cz.krapmatt.minesweeper.entity.Square;
 import cz.krapmatt.minesweeper.repository.GameRepository;
 import jakarta.transaction.Transactional;
@@ -20,11 +21,27 @@ import jakarta.transaction.Transactional;
 public class GameService {
     @Autowired
     private GameRepository gameRepository;
-    //JUnit testy  - jeden test mám asi
-    //uložení  - ukládám board asi ig
+    
+    @Transactional
+    public void saveGame(Game game) {
+        gameRepository.saveGame(game);
+    }
 
-    //game repo -> select game id -> nejnovější board a vycucnout čtverce -> měl bych mít
-    //Managed a detached entitách a transakce ->  @Transactional -> pořád moc nechápu asi... :(((
+    @Transactional
+    public void saveBoard(Board board) {
+        gameRepository.saveBoard(board);
+    }
+    
+    @Transactional
+    public Game getGame(int id) {
+        return gameRepository.findGameById(id);
+    }
+    
+    @Transactional
+    public Board findNewestBoard(int id) {
+        return gameRepository.findLatestBoardByGameId(id);
+    }
+
     @Transactional
     public Game createGame(int rows, int columns, int numOfMines)  {
         Game game = new Game();
@@ -48,26 +65,135 @@ public class GameService {
         return game;      
     }
 
-    @Transactional
-    public void saveGame(Game game) {
-        gameRepository.saveGame(game);
+//RESTAPI
+    public void ClickOnSquare(int id, int selectedRow, int selectedColumn) {
+        Game game = getGame(id);
+        Board board = findNewestBoard(id).clone();
+        
+        GameState gameState = openSquare(board, game, selectedRow, selectedColumn) ? GameState.ONGOING : GameState.LOST_GAME;
+        
+        if (gameState == GameState.ONGOING) {
+            gameState = isAllOpenedOrMarked(game) ? GameState.WON_GAME : GameState.ONGOING;
+        }
+        board.setGameState(gameState);
+
+        saveBoard(board);
     }
 
-    @Transactional
-    public void saveBoard(Board board) {
-        gameRepository.saveBoard(board);
-    }
-    
-    @Transactional
-    public Game getGame(int id) {
-        return gameRepository.findGameById(id);
-    }
-    
-    @Transactional
-    public Board findNewestBoard(Game game) {
-        return gameRepository.findLatestBoardByGameId(game.getId());
+    public void FlagBomb(int id, int selectedRow, int selectedColumn) {
+        Board board = findNewestBoard(id).clone();
+        GameState gameState = board.getGameState();
+        Game game = getGame(id);
+        toggleMarkedSquare(board, game, selectedRow, selectedColumn);
+        if (gameState == GameState.ONGOING) {
+            gameState = isAllOpenedOrMarked(game) ? GameState.WON_GAME : GameState.ONGOING;
+        }
+        board.setGameState(gameState);
+        saveBoard(board);
     }
 
+    public GameState getGamestate(int id) {
+        return findNewestBoard(id).getGameState();
+    }
+
+    public List<Integer> getPlayebleGames() {
+        List<Game> games = gameRepository.findAllPlayableGames();
+        List<Integer> ids = new ArrayList<>();
+        for(Game game : games) {
+            ids.add(game.getId());
+        }
+        return ids;
+    }
+
+    public String generateGameString(int id) {
+        Game game = getGame(id);
+        Board board = findNewestBoard(id);
+        int columns = game.getColumns();
+        int rows = game.getRows();
+        GameState gameState = getGamestate(id);
+
+        StringBuilder gameStringBuilder = new StringBuilder();
+        gameStringBuilder.append("<div style=\"font-family: monospace;\">");
+
+        gameStringBuilder.append("Game ID: ").append(game.getId()).append("<br>").append("Rows: ").append(rows).append("<br>")
+        .append("Columns: ").append(columns).append("<br>").append("Number of mines: ").append(game.getNumOfMines()).append("<br>").append(gameState).append("<br>");
+
+        
+        List<Square> squares = board.getSquares();
+        gameStringBuilder.append("Board: ");
+        
+        gameStringBuilder.append("<br>\tX");
+
+       
+        for(int j = 0; j < columns; j++) {
+            gameStringBuilder.append(String.format("%3d", j+1));
+        }
+        gameStringBuilder.append("<br>");
+    
+        for(int i = 0; i < rows; i++) {
+            gameStringBuilder.append(String.format("%3d", i+1));
+            for(int j = 0; j < columns; j++) {
+                if (squares.get(i * columns + j).checkIsOpened()) {
+                    gameStringBuilder.append(String.format("%3d", squares.get(i * columns + j).getMineCount()));
+                }
+                else if (squares.get(i * columns + j).checkIsMarked()) {
+                    gameStringBuilder.append(String.format("%3s" , "\u2690"));
+                }
+                else {
+                    gameStringBuilder.append(String.format("%3s", '\u25A0'));
+                }
+            }
+            gameStringBuilder.append("<br>");
+        }
+        gameStringBuilder.append("</div>");
+
+        return gameStringBuilder.toString();
+    }
+    //Logic
+    public boolean openSquare(Board board, Game game, int selectedRow, int selectedColumn) {
+        List<Square> squares = board.getSquares();
+        int columns = game.getColumns();
+        if (squares.get(selectedRow * columns + selectedColumn).checkIsMarked()) {
+            return true;
+        }
+        if (squares.get(selectedRow * columns + selectedColumn).checkHasMine()) {
+            return false;
+        }
+        if (squares.get(selectedRow * columns + selectedColumn).getMineCount() > 0) {
+            squares.get(selectedRow * columns + selectedColumn).setIsOpened();
+            return true;
+        }
+        openNeighboursRecursively(board, game, selectedRow, selectedColumn);
+        return true;
+    }
+
+    public void toggleMarkedSquare(Board board, Game game, int selectedRow, int selectedColumn) {
+        List<Square> squares = board.getSquares();
+        Square curSquare = squares.get(selectedRow * game.getColumns() + selectedColumn);
+        if (!curSquare.checkIsOpened()) {
+            if (curSquare.checkIsMarked()) {
+                markedCount -= 1;
+                curSquare.toggleMarked();
+            } else if (markedCount < game.getNumOfMines()) {
+                markedCount += 1;
+                curSquare.toggleMarked();
+            }
+        }
+    }
+    
+    public boolean isAllOpenedOrMarked(Game game) {
+        List<Square> squares = findNewestBoard(game.getId()).getSquares();
+    
+        for (Square square : squares) {
+            if (square.checkHasMine() && !square.checkIsMarked()) {
+                return false;
+            }
+            if (!square.checkIsOpened() && !square.checkHasMine()) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     private int markedCount;
     public List<Square> createSquares(int rows, int columns, Board board) {
@@ -162,51 +288,6 @@ public class GameService {
                 }
             }
         }
-    }
-    
-    public boolean openSquare(Board board, Game game, int selectedRow, int selectedColumn) {
-        List<Square> squares = board.getSquares();
-        int columns = game.getColumns();
-        if (squares.get(selectedRow * columns + selectedColumn).checkIsMarked()) {
-            return true;
-        }
-        if (squares.get(selectedRow * columns + selectedColumn).checkHasMine()) {
-            return false;
-        }
-        if (squares.get(selectedRow * columns + selectedColumn).getMineCount() > 0) {
-            squares.get(selectedRow * columns + selectedColumn).setIsOpened();
-            return true;
-        }
-        openNeighboursRecursively(board, game, selectedRow, selectedColumn);
-        return true;
-    }
-    
-    public void toggleMarkedSquare(Board board, Game game, int selectedRow, int selectedColumn) {
-        List<Square> squares = board.getSquares();
-        Square curSquare = squares.get(selectedRow * game.getColumns() + selectedColumn);
-        if (!curSquare.checkIsOpened()) {
-            if (curSquare.checkIsMarked()) {
-                markedCount -= 1;
-                curSquare.toggleMarked();
-            } else if (markedCount < game.getNumOfMines()) {
-                markedCount += 1;
-                curSquare.toggleMarked();
-            }
-        }
-    }
-    
-    public boolean isAllOpenedOrMarked(Board board, Game game) {
-        List<Square> squares = board.getSquares();
-        int columns = game.getColumns();
-        int rows = game.getRows();
-        for(int i = 0; i < rows; i++) {
-            for(int j = 0; j < columns; j++) {
-                if (!squares.get(i * columns + j).checkIsOpened() || !squares.get(i * columns + j).checkIsMarked()) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     private static final int[] di = { -1, -1, -1, 0, 0, 1, 1, 1 };
