@@ -2,16 +2,19 @@ package cz.krapmatt.minesweeper.simulation;
 
 import java.util.List;
 
+import org.springframework.stereotype.Component;
+
 import cz.krapmatt.minesweeper.entity.Game;
 import cz.krapmatt.minesweeper.entity.GameState;
 import cz.krapmatt.minesweeper.entity.Moves;
 import cz.krapmatt.minesweeper.service.GameService;
 
+@Component
 public class GameSimulation {
     //stav hry -> si vytvoří hru
     private GameService gameService;
     
-    private GameState SimulateAllRounds(int gameId) {
+    public GameState SimulateAllRounds(int gameId) {
         Board board = new Board();
         board.setGameState(gameService.getGamestate(gameId));
         GameState gameState = board.getGameState();
@@ -30,7 +33,7 @@ public class GameSimulation {
         return gameState;
     }
 
-    private GameState SimulateOneRound(Board board, Game game) {
+    public GameState SimulateOneRound(Board board, Game game) {
         GameState gameState = board.getGameState();
         gameState = gameService.isAllOpenedOrMarked(board.getSquares()) ? GameState.WON_GAME : GameState.ONGOING;
         if (gameState == GameState.WON_GAME) {

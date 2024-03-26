@@ -21,7 +21,7 @@ public class GameRepository {
     public GameRepository(EntityManager entityManager) {
         this.entityManager = entityManager;
     }
- 
+    @Transactional
     public Game saveGame(Game game) {
         if (game.getId() == null) {
             entityManager.persist(game);
@@ -41,16 +41,14 @@ public class GameRepository {
     }
 
     public boolean existsMine(int x, int y, int gameId) {
-        Integer mine = entityManager.createQuery("SELECT COUNT(m) FROM Mine m WHERE m.x = :x AND m.y = :y AND m.gameId = :gameId", Integer.class)
+        Long mineCount = entityManager.createQuery(
+                "SELECT COUNT(m) FROM Mine m WHERE m.x = :x AND m.y = :y AND m.game.id = :gameId", Long.class)
                 .setParameter("x", x)
                 .setParameter("y", y)
                 .setParameter("gameId", gameId)
                 .getSingleResult();
-        if (mine == 0) {
-            return false;
-        } else {
-            return true;
-        }
+        
+        return mineCount > 0;
     }
 
     @Transactional

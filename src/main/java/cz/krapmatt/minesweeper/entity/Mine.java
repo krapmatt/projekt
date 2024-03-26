@@ -21,10 +21,10 @@ public class Mine {
     private Game game;
 
 
-    public Mine(int x, int y, int gameId) {
+    public Mine(int x, int y, Game game) {
         this.x = x;
         this.y = y;
-        this.game.setId(gameId);
+        this.game = game;
     }
 
     /**

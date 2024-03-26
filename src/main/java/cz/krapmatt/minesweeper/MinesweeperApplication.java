@@ -12,6 +12,9 @@ import cz.krapmatt.minesweeper.entity.Moves;
 import cz.krapmatt.minesweeper.entity.Game;
 import cz.krapmatt.minesweeper.entity.GameState;
 import cz.krapmatt.minesweeper.service.GameService;
+import cz.krapmatt.minesweeper.simulation.Board;
+import cz.krapmatt.minesweeper.simulation.GameSimulation;
+import cz.krapmatt.minesweeper.simulation.Square;
 
 @SpringBootApplication
 public class MinesweeperApplication implements CommandLineRunner {
@@ -37,12 +40,13 @@ public class MinesweeperApplication implements CommandLineRunner {
     }
 
     private final GameService gameService;
-    
-    private final Scanner scanner;;
+    private GameSimulation gameSimulation;
+    private final Scanner scanner;
 
-    public MinesweeperApplication(GameService gameService) {
+    public MinesweeperApplication(GameService gameService, GameSimulation gameSimulation) {
         this.gameService = gameService;
         this.scanner = new Scanner(System.in);
+        this.gameSimulation = gameSimulation;
 
     }
 
@@ -73,14 +77,17 @@ public class MinesweeperApplication implements CommandLineRunner {
            gameId = Integer.parseInt(args[3]);
            game = gameService.getGame(gameId);
         }
+
+        Board board = new Board();
+        List<Square> squares = gameService.fillSquares(game);
+        board.setNumOfMines(game.getMines().size());
+        board.setSquares(squares);
+        System.out.println(board);
         GameState curGameState = GameState.ONGOING;
         while (curGameState == GameState.ONGOING) {
-            //Naklonování nejnovější board... musí se clonovat jinak nemá null id a přepisuje se jen
-            Moves board = gameService.findNewestBoard(gameId).clone();
-            //hraní kola
-            curGameState = playRound(board, game);
-            //Nastavení id hry pro každý board
-            gameService.saveBoard(board);
+            /*display(board, game);
+            curGameState = gameSimulation.SimulateOneRound(board, game);*/
+
         }
 
         gameService.saveGame(game);
@@ -96,47 +103,10 @@ public class MinesweeperApplication implements CommandLineRunner {
     private void gameOver(String msg) {
         System.out.println("Stav hry: " + msg);
     }
-    //Hraní jednoho kola
-    private GameState playRound(Moves board, Game game) {
-        display(board.getSquares(), game);
-        
-        System.out.print("Akce (0 pro otevření políčka, 1 na označení miny, 2 pro ukončení hry): ");
-        Action action = Action.fromInteger(scanner.nextInt());
-        if (action == Action.CLOSE) {
-            gameService.saveGame(game);
-            System.out.println("Id hry: " + game.getId());
-            System.exit(1);
-        }
+    
 
-        System.out.print("Řádek: ");
-        int row = scanner.nextInt() - 1;
-        System.out.print("Sloupec: ");
-        int column = scanner.nextInt() - 1;
-
-        if (row < 0 || row >= game.getRows() || column < 0 || column >= game.getColumns()) {
-            System.out.println("Neplatné souřadnice.");
-            return GameState.ONGOING;
-        }
-
-        GameState gameState;
-        gameState = gameService.isAllOpenedOrMarked(game) ? GameState.WON_GAME : GameState.ONGOING;
-        if (gameState == GameState.WON_GAME) {
-            return GameState.WON_GAME;
-        }
-
-        if(action == Action.OPEN) {
-            gameState = gameService.openSquare(board, game, row, column) ? GameState.ONGOING : GameState.LOST_GAME;
-        }
-        else if (action == Action.MARK) {
-            gameService.toggleMarkedSquare(board, game, row, column);
-        } else {
-            System.out.println("Invalid action");
-        }
-        
-        return gameState;
-    }
-
-    private void display(List<Square> squares, Game game) {
+    private void display(Board board, Game game) {
+        List<Square> squares = board.getSquares();
         int columns = game.getColumns();
         int rows = game.getRows();
         System.out.print("   ");

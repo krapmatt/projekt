@@ -36,25 +36,31 @@ public class GameService {
     
     public Game createGame(int rows, int columns, int numOfMines)  {
         Game game = new Game(rows, columns);
-        createMines(game, numOfMines);
         gameRepository.saveGame(game);
+        List<Mine> mines = createMines(game, numOfMines);
+        game.setMines(mines);
+
+        
         return game;      
     }
-
-    private void createMines(Game game, int numOfMines) {
+    @Transactional
+    private List<Mine> createMines(Game game, int numOfMines) {
         int minesPlaced = 0;
         Random rand = new Random();
-        
+        List<Mine> mines = new ArrayList<>();
+
         while (minesPlaced < numOfMines) {
             int x = rand.nextInt(game.getRows());
             int y = rand.nextInt(game.getColumns());
 
             if (!gameRepository.existsMine(x, y, game.getId())) {
-                Mine mine = new Mine(x, y, game.getId());
+                Mine mine = new Mine(x, y, game);
+                mines.add(mine);
                 gameRepository.saveMine(mine);
                 minesPlaced++;
             }
         }
+        return mines;
     }
 
 //RESTAPI
@@ -72,6 +78,7 @@ public class GameService {
         List<Moves> moves = game.getMoves();
         Moves move = new Moves(selectedRow, selectedColumn, action, game);
         moves.add(move);
+
         if(getGamestate(id) == GameState.ONGOING) {
             
         }
