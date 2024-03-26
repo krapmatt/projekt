@@ -5,9 +5,10 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import cz.krapmatt.minesweeper.entity.Board;
+import cz.krapmatt.minesweeper.entity.Moves;
 import cz.krapmatt.minesweeper.entity.Game;
 import cz.krapmatt.minesweeper.entity.GameState;
+import cz.krapmatt.minesweeper.entity.Mine;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
@@ -31,11 +32,24 @@ public class GameRepository {
     }
 
     @Transactional
-    public void saveBoard(Board board) {
-        if (board.getId() == null) {
-            entityManager.persist(board);
+    public void saveMine(Mine mine) {
+        if (!existsMine(mine.getX(), mine.getY(), mine.getGame().getId())) {
+            entityManager.persist(mine);
         } else {
-            entityManager.merge(board);
+            entityManager.merge(mine);
+        }
+    }
+
+    public boolean existsMine(int x, int y, int gameId) {
+        Integer mine = entityManager.createQuery("SELECT COUNT(m) FROM Mine m WHERE m.x = :x AND m.y = :y AND m.gameId = :gameId", Integer.class)
+                .setParameter("x", x)
+                .setParameter("y", y)
+                .setParameter("gameId", gameId)
+                .getSingleResult();
+        if (mine == 0) {
+            return false;
+        } else {
+            return true;
         }
     }
 
@@ -45,13 +59,12 @@ public class GameRepository {
         return game;
     }
     
-    public Board findLatestBoardByGameId(int gameId) {
-        TypedQuery<Board> query = entityManager.createQuery("SELECT b FROM Board b WHERE b.game.id = :gameId ORDER BY b.id DESC", Board.class);
+    public List<Moves> findAllMovesByGameId(int gameId) {
+        TypedQuery<Moves> query = entityManager.createQuery("SELECT m FROM Moves m WHERE m.game.id", Moves.class);
         query.setParameter("gameId", gameId);
-        query.setMaxResults(1);
-        Board board = query.getSingleResult();
+        List<Moves> moves = query.getResultList();
         
-        return board;
+        return moves;
     }
 
     public List<Game> findAllPlayableGames() {
@@ -59,4 +72,5 @@ public class GameRepository {
         query.setParameter("state", GameState.ONGOING);
         return query.getResultList();
     }
+    
 }

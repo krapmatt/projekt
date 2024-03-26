@@ -1,22 +1,23 @@
 package cz.krapmatt.minesweeper.service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import cz.krapmatt.minesweeper.entity.Board;
 import cz.krapmatt.minesweeper.entity.Game;
 import cz.krapmatt.minesweeper.entity.GameState;
-import cz.krapmatt.minesweeper.entity.Square;
+import cz.krapmatt.minesweeper.entity.Mine;
+import cz.krapmatt.minesweeper.entity.Moves;
 import cz.krapmatt.minesweeper.repository.GameRepository;
+import cz.krapmatt.minesweeper.simulation.Board;
+import cz.krapmatt.minesweeper.simulation.Square;
 import jakarta.transaction.Transactional;
+//vytvoření factory, která vytvoří hru pomocí id
+//Simulaci hry, strčím entitu hry z databáze -> funkce na hraní
 
-//pracování s daty
-//Vytvoření entit, uložení, jak probíhají tahy - v MineSweeper starání se o zobrazení v konzoli a uživateli
 @Service
 public class GameService {
     @Autowired
@@ -28,72 +29,56 @@ public class GameService {
     }
 
     @Transactional
-    public void saveBoard(Board board) {
-        gameRepository.saveBoard(board);
-    }
-    
-    @Transactional
     public Game getGame(int id) {
         return gameRepository.findGameById(id);
     }
+
     
-    @Transactional
-    public Board findNewestBoard(int id) {
-        return gameRepository.findLatestBoardByGameId(id);
-    }
-
-    @Transactional
     public Game createGame(int rows, int columns, int numOfMines)  {
-        Game game = new Game();
-        game.setRows(rows);
-        game.setColumns(columns);
-        game.setNumOfMines(numOfMines);
-
-        Board board = new Board();
-        board.setGame(game);
-
-        List<Square> squares = createSquares(rows, columns, board);
-        board.setSquares(squares);
-        
-        fillSquares(board, game);
-
-        List<Board> boards = Arrays.asList(board);
-        game.setBoards(boards);
-
+        Game game = new Game(rows, columns);
+        createMines(game, numOfMines);
         gameRepository.saveGame(game);
-        
         return game;      
     }
 
-//RESTAPI
-    public void ClickOnSquare(int id, int selectedRow, int selectedColumn) {
-        Game game = getGame(id);
-        Board board = findNewestBoard(id).clone();
+    private void createMines(Game game, int numOfMines) {
+        int minesPlaced = 0;
+        Random rand = new Random();
         
-        GameState gameState = openSquare(board, game, selectedRow, selectedColumn) ? GameState.ONGOING : GameState.LOST_GAME;
-        
-        if (gameState == GameState.ONGOING) {
-            gameState = isAllOpenedOrMarked(game) ? GameState.WON_GAME : GameState.ONGOING;
-        }
-        board.setGameState(gameState);
+        while (minesPlaced < numOfMines) {
+            int x = rand.nextInt(game.getRows());
+            int y = rand.nextInt(game.getColumns());
 
-        saveBoard(board);
+            if (!gameRepository.existsMine(x, y, game.getId())) {
+                Mine mine = new Mine(x, y, game.getId());
+                gameRepository.saveMine(mine);
+                minesPlaced++;
+            }
+        }
     }
 
-    public void FlagBomb(int id, int selectedRow, int selectedColumn) {
-        Board board = findNewestBoard(id).clone();
-        GameState gameState = board.getGameState();
+//RESTAPI
+    public void ClickOnSquare(int id, int selectedRow, int selectedColumn, int action) {
         Game game = getGame(id);
-        toggleMarkedSquare(board, game, selectedRow, selectedColumn);
-        if (gameState == GameState.ONGOING) {
-            gameState = isAllOpenedOrMarked(game) ? GameState.WON_GAME : GameState.ONGOING;
+        List<Moves> moves = game.getMoves();
+        Moves move = new Moves(selectedRow, selectedColumn, action, game);
+        moves.add(move);
+        
+        gameRepository.saveGame(game);
+    }
+
+    public void FlagBomb(int id, int selectedRow, int selectedColumn, int action) {
+        Game game = getGame(id);
+        List<Moves> moves = game.getMoves();
+        Moves move = new Moves(selectedRow, selectedColumn, action, game);
+        moves.add(move);
+        if(getGamestate(id) == GameState.ONGOING) {
+            
         }
-        board.setGameState(gameState);
-        saveBoard(board);
     }
 
     public GameState getGamestate(int id) {
-        return findNewestBoard(id).getGameState();
+        return GameState.ONGOING;    
     }
 
     public List<Integer> getPlayebleGames() {
@@ -105,9 +90,9 @@ public class GameService {
         return ids;
     }
 
-    public String generateGameString(int id) {
+    /*public String generateGameString(int id) {
         Game game = getGame(id);
-        Board board = findNewestBoard(id);
+        Moves board = findNewestBoard(id);
         int columns = game.getColumns();
         int rows = game.getRows();
         GameState gameState = getGamestate(id);
@@ -148,7 +133,7 @@ public class GameService {
         gameStringBuilder.append("</div>");
 
         return gameStringBuilder.toString();
-    }
+    }*/
     //Logic
     public boolean openSquare(Board board, Game game, int selectedRow, int selectedColumn) {
         List<Square> squares = board.getSquares();
@@ -163,10 +148,11 @@ public class GameService {
             squares.get(selectedRow * columns + selectedColumn).setIsOpened();
             return true;
         }
-        openNeighboursRecursively(board, game, selectedRow, selectedColumn);
+        openNeighboursRecursively(squares, game, selectedRow, selectedColumn);
         return true;
     }
-
+    
+    private int markedCount;
     public void toggleMarkedSquare(Board board, Game game, int selectedRow, int selectedColumn) {
         List<Square> squares = board.getSquares();
         Square curSquare = squares.get(selectedRow * game.getColumns() + selectedColumn);
@@ -174,16 +160,14 @@ public class GameService {
             if (curSquare.checkIsMarked()) {
                 markedCount -= 1;
                 curSquare.toggleMarked();
-            } else if (markedCount < game.getNumOfMines()) {
+            } else if (markedCount < board.getNumOfMines()) {
                 markedCount += 1;
                 curSquare.toggleMarked();
             }
         }
     }
     
-    public boolean isAllOpenedOrMarked(Game game) {
-        List<Square> squares = findNewestBoard(game.getId()).getSquares();
-    
+    public boolean isAllOpenedOrMarked(List<Square> squares) {    
         for (Square square : squares) {
             if (square.checkHasMine() && !square.checkIsMarked()) {
                 return false;
@@ -195,44 +179,39 @@ public class GameService {
         return true;
     }
 
-    private int markedCount;
-    public List<Square> createSquares(int rows, int columns, Board board) {
+    
+
+    public List<Square> fillSquares(Game game) {
+        List<Square> squares = createSquares(game.getRows(), game.getColumns());
+        squares = fillMines(game, squares);
+        squares = placeNumbers(squares, game);
+        return squares;
+    }
+    
+    private List<Square> fillMines(Game game, List<Square> squares) {
+        List<Mine> mines = game.getMines();
+        for (int i  = 0; i < mines.size(); i++) {
+            Mine mine = mines.get(i);
+            int x = mine.getX();
+            int y = mine.getY();
+            squares.get(x * game.getColumns() + y);    
+        }
+        return squares;
+    }
+    
+    private List<Square> createSquares(int rows, int columns) {
         List<Square> squares = new ArrayList<>();
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < columns; j++) {
                 Square square = new Square();
-                square.setBoard(board);
                 squares.add(square);
             }
         }
         return squares;
     }
-
-    private void fillSquares(Board board, Game game) {
-        List<Square> squares = board.getSquares();
-        squares = placeMines(board, game);
-        squares = placeNumbers(board, game);
-        board.setSquares(squares);
-    }
-    
-    public List<Square> placeMines(Board board, Game game) {
-        int minesPlaced = 0;
-        int randRange = game.getRows() * game.getColumns();
-        Random rand = new Random();
-        List<Square> squares = board.getSquares();
-        while (minesPlaced < game.getNumOfMines()) {
-            int randomNumber = rand.nextInt(randRange);
-            if (!squares.get(randomNumber).checkHasMine()) {
-                squares.get(randomNumber).setHasMine();
-                minesPlaced++;
-            }
-        }
-        return squares;
-    }
-
-    private List<Square> placeNumbers(Board board, Game game) {
+    //Pro zobrazení pro uživatele...
+    private List<Square> placeNumbers(List<Square> squares, Game game) {
         int neighbourCount = Square.getNeighbourCount();
-        List<Square> squares = board.getSquares();
         int columns = game.getColumns();
 
         for (int i = 0; i < game.getRows(); i++) {
@@ -259,8 +238,7 @@ public class GameService {
         return currentRow >= 0 && currentRow < game.getRows() && currentColumn >= 0 && currentColumn < game.getColumns();
     }
     
-    private boolean shouldOpen(Board board, Game game, int currentRow, int currentColumn) {
-        List<Square> squares = board.getSquares();
+    private boolean shouldOpen(List<Square> squares, Game game, int currentRow, int currentColumn) {
         int columns = game.getColumns();
         return currentRow >= 0 &&
                currentRow < game.getRows() &&
@@ -270,8 +248,7 @@ public class GameService {
                !squares.get(currentRow * columns + currentColumn).checkIsOpened();
     }
     
-    private void openNeighboursRecursively(Board board, Game game, int currentRow, int currentColumn) {
-        List<Square> squares = board.getSquares();
+    private void openNeighboursRecursively(List<Square> squares, Game game, int currentRow, int currentColumn) {
         int columns = game.getColumns();
         squares.get(currentRow * columns + currentColumn).setIsOpened();
         int neighbourCount = Square.getNeighbourCount();
@@ -279,12 +256,12 @@ public class GameService {
             int newRow = currentRow + di[k];
             int newCol = currentColumn + dj[k];
     
-            if (shouldOpen(board, game, newRow, newCol)) {
+            if (shouldOpen(squares, game, newRow, newCol)) {
                 if (squares.get(newRow * columns + newCol).getMineCount() > 0) {
                     squares.get(newRow * columns + newCol).setIsOpened();
                 }
                 else {
-                    openNeighboursRecursively(board, game, newRow, newCol);
+                    openNeighboursRecursively(squares, game, newRow, newCol);
                 }
             }
         }

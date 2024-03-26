@@ -11,8 +11,16 @@ public class Game {
     @Column(name="game_id")
     private Integer id;
 
+    //Jen seznam provedených tahů - neukládat všechny board/čtverce
     @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
-    private List<Board> boards;
+    private List<Moves> moves;
+
+    @OneToMany(mappedBy = "game", cascade = CascadeType.ALL)
+    private List<Mine> mines;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "game_state")
+    private GameState gameState;
 
     @Column(name="rows")
     private int rows;
@@ -20,11 +28,13 @@ public class Game {
     @Column(name="columns")
     private int columns;
 
-    @Column(name="numOfMines")
-    private int numOfMines;
+    
+    public Game(int rows, int columns) {
+        this.gameState = GameState.ONGOING;
+        this.rows = rows;
+        this.columns = columns;
+    }
 
-
-    // Getters and setters
     
     /**
      * @return Integer return the id
@@ -38,6 +48,34 @@ public class Game {
      */
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    /**
+     * @return List<Moves> return the moves
+     */
+    public List<Moves> getMoves() {
+        return moves;
+    }
+
+    /**
+     * @param moves the moves to set
+     */
+    public void setMoves(List<Moves> moves) {
+        this.moves = moves;
+    }
+
+    /**
+     * @return GameState return the gameState
+     */
+    public GameState getGameState() {
+        return gameState;
+    }
+
+    /**
+     * @param gameState the gameState to set
+     */
+    public void setGameState(GameState gameState) {
+        this.gameState = gameState;
     }
 
     /**
@@ -68,39 +106,19 @@ public class Game {
         this.columns = columns;
     }
 
+
     /**
-     * @return int return the numOfMines
+     * @return List<Mine> return the mines
      */
-    public int getNumOfMines() {
-        return numOfMines;
+    public List<Mine> getMines() {
+        return mines;
     }
 
     /**
-     * @param numOfMines the numOfMines to set
+     * @param mines the mines to set
      */
-    public void setNumOfMines(int numOfMines) {
-        this.numOfMines = numOfMines;
-    }
-
-
-    /**
-     * @return List<Board> return the boards
-     */
-    public List<Board> getBoards() {
-        return boards;
-    }
-
-    /**
-     * @param boards the boards to set
-     */
-    public void setBoards(List<Board> boards) {
-        this.boards = boards;
-    }
-
-    @Override
-    public String toString() {
-        return "Game [id=" + id + ", boards=" + boards + ", rows=" + rows + ", columns=" + columns + ", numOfMines="
-                + numOfMines + "]";
+    public void setMines(List<Mine> mines) {
+        this.mines = mines;
     }
 
 }

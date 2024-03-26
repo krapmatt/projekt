@@ -8,10 +8,9 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import cz.krapmatt.minesweeper.entity.Board;
+import cz.krapmatt.minesweeper.entity.Moves;
 import cz.krapmatt.minesweeper.entity.Game;
 import cz.krapmatt.minesweeper.entity.GameState;
-import cz.krapmatt.minesweeper.entity.Square;
 import cz.krapmatt.minesweeper.service.GameService;
 
 @SpringBootApplication
@@ -77,7 +76,7 @@ public class MinesweeperApplication implements CommandLineRunner {
         GameState curGameState = GameState.ONGOING;
         while (curGameState == GameState.ONGOING) {
             //Naklonování nejnovější board... musí se clonovat jinak nemá null id a přepisuje se jen
-            Board board = gameService.findNewestBoard(gameId).clone();
+            Moves board = gameService.findNewestBoard(gameId).clone();
             //hraní kola
             curGameState = playRound(board, game);
             //Nastavení id hry pro každý board
@@ -98,7 +97,7 @@ public class MinesweeperApplication implements CommandLineRunner {
         System.out.println("Stav hry: " + msg);
     }
     //Hraní jednoho kola
-    private GameState playRound(Board board, Game game) {
+    private GameState playRound(Moves board, Game game) {
         display(board.getSquares(), game);
         
         System.out.print("Akce (0 pro otevření políčka, 1 na označení miny, 2 pro ukončení hry): ");
