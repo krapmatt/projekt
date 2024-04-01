@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import cz.krapmatt.minesweeper.entity.Moves;
 import cz.krapmatt.minesweeper.entity.Game;
-import cz.krapmatt.minesweeper.entity.Square;
+
 import cz.krapmatt.minesweeper.service.GameService;
 
 

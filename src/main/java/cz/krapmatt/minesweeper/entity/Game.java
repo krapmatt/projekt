@@ -35,7 +35,9 @@ public class Game {
         this.columns = columns;
     }
 
-    
+    public Game() {
+        
+    }
     /**
      * @return Integer return the id
      */

@@ -20,6 +20,9 @@ public class Mine {
     @JoinColumn(name="game_id")
     private Game game;
 
+    public Mine() {
+        
+    }
 
     public Mine(int x, int y, Game game) {
         this.x = x;

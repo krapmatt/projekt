@@ -32,6 +32,11 @@ public class GameRepository {
     }
 
     @Transactional
+    public void addAndSaveMoves(Moves move) {
+        entityManager.persist(move);
+    }
+
+    @Transactional
     public void saveMine(Mine mine) {
         if (!existsMine(mine.getX(), mine.getY(), mine.getGame().getId())) {
             entityManager.persist(mine);
@@ -66,7 +71,7 @@ public class GameRepository {
     }
 
     public List<Game> findAllPlayableGames() {
-        TypedQuery<Game> query = entityManager.createQuery("SELECT b.game FROM Board b WHERE b.gameState = :state " + "AND b.id IN (SELECT MAX(b2.id) FROM Board b2 GROUP BY b2.game)", Game.class);
+        TypedQuery<Game> query = entityManager.createQuery("SELECT g FROM Game g WHERE g.gameState = :state", Game.class);
         query.setParameter("state", GameState.ONGOING);
         return query.getResultList();
     }

@@ -1,6 +1,6 @@
 
 package cz.krapmatt.minesweeper;
-
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
@@ -8,12 +8,11 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import cz.krapmatt.minesweeper.entity.Moves;
 import cz.krapmatt.minesweeper.entity.Game;
 import cz.krapmatt.minesweeper.entity.GameState;
+import cz.krapmatt.minesweeper.entity.Moves;
 import cz.krapmatt.minesweeper.service.GameService;
 import cz.krapmatt.minesweeper.simulation.Board;
-import cz.krapmatt.minesweeper.simulation.GameSimulation;
 import cz.krapmatt.minesweeper.simulation.Square;
 
 @SpringBootApplication
@@ -31,23 +30,18 @@ public class MinesweeperApplication implements CommandLineRunner {
             }
         }
     }
-    private static final char filledSquareCharacter = '\u25A0';
-
-    private static final String markedFlagCharacter = "\u2690";
+    
     
     public static void main(String[] args) {
         SpringApplication.run(MinesweeperApplication.class, args);
     }
 
     private final GameService gameService;
-    private GameSimulation gameSimulation;
     private final Scanner scanner;
 
-    public MinesweeperApplication(GameService gameService, GameSimulation gameSimulation) {
+    public MinesweeperApplication(GameService gameService) {
         this.gameService = gameService;
         this.scanner = new Scanner(System.in);
-        this.gameSimulation = gameSimulation;
-
     }
 
     @Override
@@ -77,58 +71,42 @@ public class MinesweeperApplication implements CommandLineRunner {
            gameId = Integer.parseInt(args[3]);
            game = gameService.getGame(gameId);
         }
-
-        Board board = new Board();
-        List<Square> squares = gameService.fillSquares(game);
-        board.setNumOfMines(game.getMines().size());
-        board.setSquares(squares);
-        System.out.println(board);
+        Board board = gameService.createBoard(game);
+        List<Moves> moves = new ArrayList<>();
         GameState curGameState = GameState.ONGOING;
         while (curGameState == GameState.ONGOING) {
-            /*display(board, game);
-            curGameState = gameSimulation.SimulateOneRound(board, game);*/
 
+            System.out.print("Akce (0 pro označení pole/ 1 pro označení bomby): ");
+            int action = scanner.nextInt();
+            System.out.print("Řádek: ");
+            int row = scanner.nextInt();
+            System.out.print("Sloupec: ");
+            int column = scanner.nextInt();
+            Moves move = new Moves(row, column, action, game);
+            moves.add(move);
+            gameService.SimulateOneRound(board, game, move);
+            gameService.updateBoardCache(game, board);
+
+        }
+
+        if (board.getGameState() == GameState.LOST_GAME) {
+            gameOver("Prohra");
+        } else if (board.getGameState() == GameState.WON_GAME) {
+            gameOver("Výhra");
         }
 
         gameService.saveGame(game);
+        
 
-        if (curGameState == GameState.LOST_GAME) {
-            this.gameOver("Prohra");
-        } else if (curGameState == GameState.WON_GAME) {
-            this.gameOver("Výhra");
-        }
         scanner.close();
+        
     }
 
     private void gameOver(String msg) {
         System.out.println("Stav hry: " + msg);
+        
     }
     
 
-    private void display(Board board, Game game) {
-        List<Square> squares = board.getSquares();
-        int columns = game.getColumns();
-        int rows = game.getRows();
-        System.out.print("   ");
-        for(int j = 0; j < columns; j++) {
-            System.out.printf("%3d", j + 1);
-        }
-        System.out.println();
     
-        for(int i = 0; i < rows; i++) {
-            System.out.printf("%3d", i + 1);
-            for(int j = 0; j < columns; j++) {
-                if (squares.get(i * columns + j).checkIsOpened()) {
-                    System.out.printf("%3d", squares.get(i * columns + j).getMineCount());
-                }
-                else if (squares.get(i * columns + j).checkIsMarked()) {
-                    System.out.printf("%3s", markedFlagCharacter);
-                }
-                else {
-                    System.out.printf("%3s", filledSquareCharacter);
-                }
-            }
-            System.out.println();
-        }
-    }
 }

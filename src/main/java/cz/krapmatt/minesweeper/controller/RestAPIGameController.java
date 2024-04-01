@@ -24,18 +24,18 @@ public class RestAPIGameController {
 
     @RequestMapping("/api/game/{game_id}/click")
     @ResponseBody
-    private void ClickOnSquare(@PathVariable(value="game_id") int id, @RequestBody NewGameData newGameData) {
-        int row = newGameData.getRows() - 1;
-        int column = newGameData.getColumns() - 1;
-        gameService.ClickOnSquare(id, row, column, 0);
+    private GameState ClickOnSquare(@PathVariable(value="game_id") int id, @RequestBody NewGameData newGameData) {
+        int row = newGameData.getRows();
+        int column = newGameData.getColumns();
+        return gameService.ClickOnSquare(id, row, column);
     }
 
     @RequestMapping("/api/game/{game_id}/toggleflag")
     @ResponseBody
-    private void ToggleFlagBomb(@PathVariable(value="game_id") int id, @RequestBody NewGameData newGameData) {
-        int row = newGameData.getRows() - 1;
-        int column = newGameData.getColumns() - 1;
-        gameService.FlagBomb(id, row, column, 1);
+    private GameState ToggleFlagBomb(@PathVariable(value="game_id") int id, @RequestBody NewGameData newGameData) {
+        int row = newGameData.getRows();
+        int column = newGameData.getColumns();
+        return gameService.FlagBomb(id, row, column);
     }
     
     @RequestMapping("/api/game/{game_id}/getstate")
@@ -63,6 +63,6 @@ public class RestAPIGameController {
     @RequestMapping("/api/game/{game_id}")
     @ResponseBody
     public String showGameAsString(@PathVariable(value="game_id") int id) {
-        return "AhojgameService.generateGameString(id)";
+        return gameService.generateGameString(id);
     }
 }

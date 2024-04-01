@@ -30,6 +30,10 @@ public class Moves {
         this.action = action;
         this.game = game;
     }
+
+    public Moves(){
+
+    }
     /**
      * @return Game return the game
      */
